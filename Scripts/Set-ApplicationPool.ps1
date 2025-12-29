@@ -1,34 +1,25 @@
+$recycleMode = $args[0]
+$recycleApp = $args[1]
+$computerName = $args[2]
+$username = $args[3]
+$password = $args[4]
+$optMsDeployPath = $args[5] # Optional argument for MSDeploy path
 
-$searchPaths = @(
-    "$env:ProgramFiles\IIS\Microsoft Web Deploy *",
-    "${env:ProgramFiles(x86)}\IIS\Microsoft Web Deploy *"
-)
-
-$msdeploy = $null
-
-# Get all folders matching the pattern, sort by name descending (V4 before V3, etc.)
-$installedVersions = Get-ChildItem -Path $searchPaths -ErrorAction SilentlyContinue | 
-                     Sort-Object Name -Descending
-
-foreach ($folder in $installedVersions) {
-    $potentialPath = Join-Path $folder.FullName "msdeploy.exe"
-    if (Test-Path $potentialPath) {
-        $msdeploy = $potentialPath
-        Write-Host "Found MSDeploy at: $msdeploy"
-        break
-    }
-}
+# Locate MSDeploy and pass the static path if it was provided in args[5]
+$msdeploy = & "Scripts\Get-MsDeploy.ps1" -StaticPath $optMsDeployPath
 
 if (-not $msdeploy) {
     Write-Error "Could not find msdeploy.exe in standard installation paths."
     exit 1
 }
 
-$recycleMode = $args[0]
-$recycleApp = $args[1]
-$computerName = $args[2]
-$username = $args[3]
-$password = $args[4]
+Write-Host "-----------------------------------------"
+Write-Host "Setting Application Pool with parameters:"
+Write-Host "Recycle Mode:           $recycleMode"
+Write-Host "Recycle App:            $recycleApp"
+Write-Host "Computer Name:          $computerName"
+Write-Host "Optional MsDeploy Path: $optMsDeployPath"
+Write-Host "-----------------------------------------"
 
 $computerNameArgument = $computerName + '/MsDeploy.axd?site=' + $recycleApp
 
